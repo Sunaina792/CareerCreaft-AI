@@ -1,6 +1,6 @@
 /* api.js — Centralized API client for CareerCraft AI */
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = '/api';
 
 const Api = {
   /* ── Resume Analysis ─────────────────── */

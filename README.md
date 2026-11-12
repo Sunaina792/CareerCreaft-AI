@@ -34,7 +34,7 @@ py -3.11 -m venv .venv
 Install dependencies:
 
 ```powershell
-python -m pip install -r requirements.txt
+python -m pip install -e .
 ```
 
 Create the root `.env` file from the example:
@@ -60,6 +60,22 @@ python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 Open the app at [http://localhost:8000](http://localhost:8000). API documentation is available at [http://localhost:8000/docs](http://localhost:8000/docs), and the health endpoint is [http://localhost:8000/api/health](http://localhost:8000/api/health).
+
+## Deploy on Render
+
+The FastAPI server hosts both the frontend and API, so deploy it as a single web service:
+
+1. Push the project to GitHub and create a **Web Service** on [Render](https://render.com/) connected to the repository.
+2. Set the **Root Directory** to the directory containing `pyproject.toml` (leave it blank if that is the repository root).
+3. Use these commands:
+
+   - **Build Command:** `pip install .`
+   - **Start Command:** `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+
+4. Add `GROQ_API_KEY` under the service's **Environment Variables** in Render. Use your actual Groq API key; never put it in frontend code or commit it to GitHub.
+5. Deploy. Open the Render service URL and check `/api/health`; the app is available at the same URL.
+
+The frontend calls `/api` on the same host, so the API and pages work together on the deployed domain. Uploaded resumes are processed in memory and are not stored by the app.
 
 ## API endpoints
 
