@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Match & Skill Gap — CareerCraft AI</title>
+  <meta name="description" content="Semantically match your resume to any job description and get personalized skill gap recommendations." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .match-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media(max-width:900px) { .match-layout { grid-template-columns: 1fr; } }
+    .match-score-hero {
+      text-align: center; padding: 36px 24px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); margin-bottom: 24px;
+    }
+    .match-score-big {
+      font-size: 4rem; font-weight: 800; line-height: 1;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .gap-card {
+      border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 18px; margin-bottom: 12px; transition: var(--transition);
+    }
+    .gap-card:hover { border-color: var(--border-accent); }
+    .gap-card h4 { margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .gap-card p  { font-size: 0.87rem; margin-bottom: 8px; }
+    .gap-card .how-to { font-size: 0.82rem; color: var(--accent-cyan); }
+    .gap-card .time-badge {
+      font-size: 0.75rem; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 2px 8px; color: var(--text-muted);
+    }
+    .tip-item {
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.03); margin-bottom: 8px;
+      font-size: 0.88rem; border-left: 3px solid var(--accent-blue);
+    }
+    .tip-item strong { color: var(--accent-cyan); display: block; margin-bottom: 3px; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <div class="logo-icon">🚀</div>
+        CareerCraft <span class="gradient-text" style="margin-left:4px">AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="analyze.html">Analyze</a></li>
+        <li><a href="match.html" class="active">Job Match</a></li>
+        <li><a href="builder.html">Build Resume</a></li>
+        <li><a href="interview.html">Interview Prep</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p class="loading-text">Analyzing with AI...</p>
+  </div>
+
+  <div class="container" style="padding-top:48px;padding-bottom:64px;">
+    <div class="page-header" style="padding-top:0">
+      <span class="page-icon">🎯</span>
+      <h1>Job Description <span class="gradient-text">Matcher</span></h1>
+      <p>AI semantically compares your resume to any job posting — no keyword guessing, real intelligence.</p>
+    </div>
+
+    <!-- Input Section -->
+    <div id="inputSection">
+      <div class="match-layout">
+        <div class="card">
+          <h3 class="mb-16">📄 Your Resume</h3>
+          <div id="resumeInputWrap">
+            <div class="alert alert-info mb-16" id="resumeLoadedAlert" style="display:none">
+              ✅ Resume loaded from your previous analysis.
+            </div>
+            <div class="form-group">
+              <label class="form-label">Resume Text</label>
+              <textarea id="resumeText" class="form-textarea" style="min-height:200px"
+                placeholder="Paste your resume text here, or go to Analyze page to upload a file first…"></textarea>
+            </div>
+            <p class="text-sm text-muted">Or <a href="analyze.html" class="text-cyan">analyze a file first</a> to auto-fill this.</p>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="mb-16">💼 Job Description</h3>
+          <div class="form-group">
+            <label class="form-label">Paste Job Description</label>
+            <textarea id="jobDescription" class="form-textarea" style="min-height:200px"
+              placeholder="Paste the full job description here — requirements, responsibilities, qualifications…"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="flex-center mt-16">
+        <button class="btn btn-primary btn-lg" onclick="runMatch()">
+          🎯 Match with AI
+        </button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" class="hidden animate-fade-in" style="margin-top:40px">
+
+      <!-- Score Hero -->
+      <div class="match-score-hero">
+        <div class="match-score-big" id="matchScoreNum">—</div>
+        <p class="mt-8 text-secondary">Match Score</p>
+        <div id="matchLevelBadge" class="badge badge-cyan mt-12" style="font-size:0.9rem;padding:6px 16px;">—</div>
+        <p id="matchSummary" class="mt-16" style="max-width:640px;margin:16px auto 0"></p>
+      </div>
+
+      <!-- Skills Grid -->
+      <div class="grid-3 mb-24 stagger">
+        <div class="card animate-fade-up">
+          <h4 class="mb-12 text-green">✅ Matched Skills</h4>
+          <div id="matchedSkills" class="skill-chips"></div>
+        </div>
+        <div class="card animate-fade-up">
+          <h4 class="mb-12 text-red">❌ Missing Skills</h4>
+          <div id="missingSkills" class="skill-chips"></div>
+        </div>
+        <div class="card animate-fade-up">
+          <h4 class="mb-12 text-orange">⭐ Bonus Skills You Have</h4>
+          <div id="bonusSkills" class="skill-chips"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Skill Gap Recommendations -->
+        <div>
+          <h3 class="mb-16">📈 Skill Gap Roadmap</h3>
+          <div id="gapRecommendations"></div>
+        </div>
+
+        <!-- Tailoring Tips -->
+        <div>
+          <h3 class="mb-16">✍️ Resume Tailoring Tips</h3>
+          <div id="tailoringTips"></div>
+
+          <!-- Keywords to Add -->
+          <div class="card mt-16">
+            <h4 class="mb-12">🔑 Keywords to Add</h4>
+            <div id="keywordsToAdd" class="skill-chips"></div>
+          </div>
+
+          <!-- Actions -->
+          <div class="card mt-16" style="background:rgba(0,194,203,0.05);border-color:var(--border-accent)">
+            <h4 class="mb-8">Ready to Fix Your Resume?</h4>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+              <a href="builder.html" class="btn btn-primary">🏗️ Build Improved Resume</a>
+              <a href="interview.html" id="goInterview" class="btn btn-secondary">🎤 Interview Prep</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Auto-load resume from session
+    window.addEventListener('load', () => {
+      const saved = Session.get('resumeText');
+      if (saved) {
+        document.getElementById('resumeText').value = saved;
+        document.getElementById('resumeLoadedAlert').style.display = 'flex';
+      }
+    });
+
+    async function runMatch() {
+      const rt  = document.getElementById('resumeText').value.trim();
+      const jd  = document.getElementById('jobDescription').value.trim();
+      if (!rt)  { showToast('Please provide your resume text.', 'warning'); return; }
+      if (!jd)  { showToast('Please paste a job description.', 'warning'); return; }
+
+      showLoader('🤖 Groq AI is comparing your resume to the job...');
+      try {
+        const r = await Api.matchJob(rt, jd);
+        Session.set('jobDescription', jd);
+        renderMatch(r);
+        document.getElementById('resultsSection').classList.remove('hidden');
+        document.getElementById('resultsSection').scrollIntoView({ behavior:'smooth' });
+        showToast('Match analysis complete!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally { hideLoader(); }
+    }
+
+    function renderMatch(r) {
+      // Score
+      const score = r.match_score || 0;
+      document.getElementById('matchScoreNum').textContent = score + '%';
+      const lvl = r.match_level || 'Fair';
+      const lvlEl = document.getElementById('matchLevelBadge');
+      lvlEl.textContent = lvl; lvlEl.className = `badge ${matchLevelBadge(lvl)} mt-12`;
+      document.getElementById('matchSummary').textContent = r.match_summary || '';
+
+      // Skills
+      document.getElementById('matchedSkills').innerHTML =
+        (r.matched_skills||[]).map(s=>`<span class="chip chip-matched">${s}</span>`).join('');
+      document.getElementById('missingSkills').innerHTML =
+        (r.missing_skills||[]).map(s=>`<span class="chip chip-missing">${s}</span>`).join('');
+      document.getElementById('bonusSkills').innerHTML =
+        (r.bonus_skills||[]).map(s=>`<span class="chip chip-bonus">${s}</span>`).join('');
+      document.getElementById('keywordsToAdd').innerHTML =
+        (r.keywords_to_add||[]).map(s=>`<span class="chip chip-skill">${s}</span>`).join('');
+
+      // Gap recommendations
+      const grEl = document.getElementById('gapRecommendations');
+      grEl.innerHTML = (r.skill_gap_recommendations||[]).map(g => {
+        const impColor = { critical:'red', important:'orange', 'nice-to-have':'blue' }[g.importance] || 'blue';
+        return `<div class="gap-card">
+          <h4>
+            <span class="badge badge-${impColor}">${g.importance}</span>
+            ${g.skill}
+            <span class="time-badge">⏱ ${g.estimated_time||'?'}</span>
+          </h4>
+          <p><strong>Why needed:</strong> ${g.why_needed}</p>
+          <p class="how-to">📚 ${g.how_to_learn}</p>
+        </div>`;
+      }).join('');
+
+      // Tailoring tips
+      const ttEl = document.getElementById('tailoringTips');
+      ttEl.innerHTML = (r.resume_tailoring_tips||[]).map(t =>
+        `<div class="tip-item"><strong>${t.section}</strong>${t.suggestion}</div>`
+      ).join('');
+    }
+  </script>
+</body>
+</html>

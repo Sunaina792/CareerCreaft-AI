@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analyze Resume — CareerCraft AI</title>
+  <meta name="description" content="Upload your resume and get an AI-powered analysis with score, sections, skills, and improvement tips." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .results-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+    @media(max-width:900px) { .results-grid { grid-template-columns: 1fr; } }
+    .score-card { text-align: center; padding: 32px 24px; }
+    .strengths-list li, .tips-list li {
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.03); margin-bottom: 8px;
+      font-size: 0.9rem; border-left: 3px solid;
+      list-style: none;
+    }
+    .strengths-list li { border-color: var(--accent-green); }
+    .tips-list li.high   { border-color: var(--accent-red);    }
+    .tips-list li.medium { border-color: var(--accent-orange);  }
+    .tips-list li.low    { border-color: var(--accent-blue);    }
+    .section-check {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem;
+    }
+    .section-check:last-child { border-bottom: none; }
+    .check-icon { font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <div class="logo-icon">🚀</div>
+        CareerCraft <span class="gradient-text" style="margin-left:4px">AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="analyze.html" class="active">Analyze</a></li>
+        <li><a href="match.html">Job Match</a></li>
+        <li><a href="builder.html">Build Resume</a></li>
+        <li><a href="interview.html">Interview Prep</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p class="loading-text">Analyzing with AI...</p>
+  </div>
+
+  <div class="container" style="padding-top:48px; padding-bottom:64px;">
+    <!-- Header -->
+    <div class="page-header" style="padding-top:0">
+      <span class="page-icon">📊</span>
+      <h1>AI Resume <span class="gradient-text">Analyzer</span></h1>
+      <p>Upload your resume and get a detailed AI analysis — score, sections, skills, and actionable tips.</p>
+    </div>
+
+    <!-- Upload Section -->
+    <div id="uploadSection" class="card-glass" style="max-width:680px;margin:0 auto 40px;">
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="resumeFile" accept=".pdf,.docx" />
+        <span class="upload-icon">📁</span>
+        <h3>Drop your resume here</h3>
+        <p class="text-secondary mt-8">PDF or DOCX · Max 10 MB</p>
+        <div id="fileName" class="mt-16 text-cyan fw-600" style="display:none"></div>
+      </div>
+      <div class="mt-16 flex-center">
+        <button id="analyzeBtn" class="btn btn-primary btn-lg" onclick="analyzeResume()">
+          ⚡ Analyze with AI
+        </button>
+      </div>
+      <p class="text-center text-sm text-muted mt-8">
+        Your resume is processed in memory and not stored.
+      </p>
+    </div>
+
+    <!-- Results (hidden until analysis) -->
+    <div id="resultsSection" class="hidden animate-fade-in">
+      <div class="results-grid">
+        <!-- Left: Score & Sections -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <!-- Score Card -->
+          <div class="card score-card">
+            <div class="score-ring-wrap">
+              <div class="score-ring">
+                <svg width="140" height="140" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="58" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+                  <circle id="scoreCircle" cx="70" cy="70" r="58" fill="none"
+                    stroke="#00c2cb" stroke-width="10" stroke-linecap="round"
+                    stroke-dasharray="364.4" stroke-dashoffset="364.4"
+                    style="transition:stroke-dashoffset 1.2s ease"/>
+                </svg>
+                <div class="score-num">
+                  <span id="scoreNum">—</span>
+                  <span class="score-label">/100</span>
+                </div>
+              </div>
+              <div id="scoreLabel" class="badge badge-cyan mt-8">Analyzing…</div>
+            </div>
+            <p class="mt-16 text-sm text-secondary" id="overallFeedback"></p>
+          </div>
+
+          <!-- Score Breakdown -->
+          <div class="card">
+            <h4 class="mb-16">Score Breakdown</h4>
+            <div id="scoreBreakdown"></div>
+          </div>
+
+          <!-- Section Checklist -->
+          <div class="card">
+            <h4 class="mb-16">Section Checklist</h4>
+            <div id="sectionChecklist"></div>
+          </div>
+
+          <!-- Experience Level -->
+          <div class="card flex-between">
+            <span class="text-secondary text-sm">Experience Level</span>
+            <span id="expLevel" class="badge badge-cyan">—</span>
+          </div>
+        </div>
+
+        <!-- Right: Skills + Tips + Contact -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <!-- Detected Skills -->
+          <div class="card">
+            <h4 class="mb-16">🛠️ Skills Detected</h4>
+            <div id="skillsDetected" class="skill-chips"></div>
+          </div>
+
+          <!-- Strengths -->
+          <div class="card">
+            <h4 class="mb-16">✅ Strengths</h4>
+            <ul id="strengthsList" class="strengths-list"></ul>
+          </div>
+
+          <!-- Improvement Tips -->
+          <div class="card">
+            <h4 class="mb-16">💡 Improvement Tips</h4>
+            <ul id="tipsList" class="tips-list"></ul>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="card">
+            <h4 class="mb-16">📋 Detected Contact Info</h4>
+            <div id="contactInfo"></div>
+          </div>
+
+          <!-- Actions -->
+          <div class="card" style="background:rgba(0,194,203,0.05);border-color:var(--border-accent);">
+            <h4 class="mb-8">Next Steps</h4>
+            <p class="text-sm text-secondary mb-16">Use your analysis results to improve your resume.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <a href="match.html" id="goMatchBtn" class="btn btn-primary" onclick="storeAndGo()">
+                🎯 Match to a Job
+              </a>
+              <a href="builder.html" class="btn btn-secondary">
+                🏗️ Build Improved Resume
+              </a>
+              <a href="interview.html" id="goInterviewBtn" class="btn btn-ghost" onclick="storeAndGoInterview()">
+                🎤 Interview Prep
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    let analysisResult = null;
+
+    // Drag & drop
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('dragover');
+      const f = e.dataTransfer.files[0];
+      if (f) { document.getElementById('resumeFile').files = e.dataTransfer.files; showFileName(f.name); }
+    });
+    document.getElementById('resumeFile').addEventListener('change', e => {
+      if (e.target.files[0]) showFileName(e.target.files[0].name);
+    });
+    function showFileName(name) {
+      const el = document.getElementById('fileName');
+      el.textContent = '📎 ' + name; el.style.display = 'block';
+    }
+
+    async function analyzeResume() {
+      const file = document.getElementById('resumeFile').files[0];
+      if (!file) { showToast('Please upload a resume file first.', 'warning'); return; }
+      showLoader('🤖 Groq AI is analyzing your resume...');
+      try {
+        analysisResult = await Api.analyzeResume(file);
+        Session.set('resumeText', analysisResult.resume_text);
+        Session.set('lastAnalysis', analysisResult);
+        renderResults(analysisResult);
+        document.getElementById('resultsSection').classList.remove('hidden');
+        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        showToast('Analysis complete!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally { hideLoader(); }
+    }
+
+    function renderResults(r) {
+      // Score ring
+      const score = r.score || 0;
+      const circumference = 364.4;
+      const offset = circumference - (score / 100) * circumference;
+      const circle = document.getElementById('scoreCircle');
+      circle.style.strokeDashoffset = offset;
+      circle.style.stroke = scoreColor(score);
+      document.getElementById('scoreNum').textContent = score;
+
+      // Score label
+      const labels = [[80,'Excellent','badge-green'],[60,'Good','badge-cyan'],[40,'Fair','badge-orange'],[0,'Needs Work','badge-red']];
+      const [, lbl, cls] = labels.find(([min]) => score >= min);
+      const sl = document.getElementById('scoreLabel');
+      sl.textContent = lbl; sl.className = `badge ${cls} mt-8`;
+
+      document.getElementById('overallFeedback').textContent = r.overall_feedback || '';
+      document.getElementById('expLevel').textContent = r.experience_level || 'Unknown';
+
+      // Score breakdown
+      const breakdown = r.score_breakdown || {};
+      const bEl = document.getElementById('scoreBreakdown');
+      bEl.innerHTML = '';
+      const labels2 = {
+        contact_completeness:'Contact Info', section_completeness:'Sections',
+        skills_depth:'Skills Depth', content_quality:'Content Quality', readability:'Readability'
+      };
+      for (const [key, label] of Object.entries(labels2)) {
+        const val = breakdown[key] || 0;
+        bEl.innerHTML += `
+          <div class="progress-bar-wrap">
+            <div class="progress-label">
+              <span class="text-sm">${label}</span>
+              <span class="text-sm fw-600">${val}/20</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:${(val/20)*100}%"></div>
+            </div>
+          </div>`;
+      }
+
+      // Sections
+      const found   = r.sections_found   || [];
+      const missing = r.missing_sections || [];
+      const scEl = document.getElementById('sectionChecklist');
+      scEl.innerHTML = '';
+      found.forEach(s => {
+        scEl.innerHTML += `<div class="section-check"><span class="check-icon">✅</span><span>${s}</span></div>`;
+      });
+      missing.forEach(s => {
+        scEl.innerHTML += `<div class="section-check"><span class="check-icon">❌</span><span class="text-secondary">${s} (missing)</span></div>`;
+      });
+
+      // Skills
+      const skEl = document.getElementById('skillsDetected');
+      skEl.innerHTML = (r.skills_detected || []).map(s => `<span class="chip chip-skill">${s}</span>`).join('');
+
+      // Strengths
+      const stEl = document.getElementById('strengthsList');
+      stEl.innerHTML = (r.strengths || []).map(s => `<li>${s}</li>`).join('');
+
+      // Tips
+      const tpEl = document.getElementById('tipsList');
+      tpEl.innerHTML = (r.improvement_tips || []).map(t =>
+        `<li class="${t.priority || 'medium'}">
+          <span class="badge badge-${t.priority==='high'?'red':t.priority==='medium'?'orange':'blue'} mb-4">${t.priority||'medium'}</span>
+          <strong>${t.area}:</strong> ${t.tip}
+        </li>`
+      ).join('');
+
+      // Contact
+      const ci = r.contact_info || {};
+      const ciEl = document.getElementById('contactInfo');
+      ciEl.innerHTML = Object.entries(ci).filter(([,v])=>v).map(([k,v]) =>
+        `<div class="section-check"><span class="text-secondary text-sm" style="min-width:80px;text-transform:capitalize">${k}</span><span class="text-sm">${v}</span></div>`
+      ).join('') || '<p class="text-muted text-sm">No contact info detected</p>';
+    }
+
+    function storeAndGo() {
+      if (analysisResult) Session.set('resumeText', analysisResult.resume_text);
+    }
+    function storeAndGoInterview(e) {
+      if (analysisResult) Session.set('resumeText', analysisResult.resume_text);
+    }
+  </script>
+</body>
+</html>

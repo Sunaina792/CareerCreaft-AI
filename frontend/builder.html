@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build Resume — CareerCraft AI</title>
+  <meta name="description" content="Build an ATS-friendly resume with AI assistance. AI rewrites your bullets and generates your professional summary." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .builder-layout { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
+    @media(max-width:900px) { .builder-layout { grid-template-columns: 1fr; } }
+
+    /* Step sidebar */
+    .step-nav { position: sticky; top: 88px; }
+    .step-nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: var(--radius-sm);
+      cursor: pointer; transition: var(--transition); font-size: 0.9rem;
+      border: 1px solid transparent; margin-bottom: 6px;
+    }
+    .step-nav-item:hover { background: var(--bg-card); }
+    .step-nav-item.active { background: rgba(0,194,203,0.1); border-color: var(--border-accent); color: var(--accent-cyan); }
+    .step-nav-item.done .step-dot { background: var(--accent-green); }
+    .step-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+      transition: var(--transition);
+    }
+    .step-nav-item.active .step-dot { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); }
+
+    /* Form steps */
+    .form-step { display: none; }
+    .form-step.active { display: block; animation: fadeInUp 0.35s ease; }
+
+    /* Dynamic list items */
+    .dynamic-section { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; position: relative; }
+    .dynamic-section .remove-btn { position: absolute; top: 12px; right: 12px; }
+    .bullets-list { display: flex; flex-direction: column; gap: 8px; }
+    .bullet-item { display: flex; gap: 8px; align-items: center; }
+    .bullet-item input { flex: 1; }
+
+    /* AI improve button styling */
+    .ai-btn {
+      background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3);
+      color: #a78bfa; border-radius: var(--radius-sm); padding: 6px 12px;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: var(--font);
+      transition: var(--transition); white-space: nowrap;
+    }
+    .ai-btn:hover { background: rgba(139,92,246,0.25); }
+    .ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Progress bar top */
+    .builder-progress {
+      height: 3px; background: rgba(255,255,255,0.06);
+      border-radius: 999px; margin-bottom: 32px; overflow: hidden;
+    }
+    .builder-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+      transition: width 0.5s ease;
+    }
+    .step-actions { display: flex; justify-content: space-between; margin-top: 32px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <div class="logo-icon">🚀</div>
+        CareerCraft <span class="gradient-text" style="margin-left:4px">AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="analyze.html">Analyze</a></li>
+        <li><a href="match.html">Job Match</a></li>
+        <li><a href="builder.html" class="active">Build Resume</a></li>
+        <li><a href="interview.html">Interview Prep</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p class="loading-text">AI is working...</p>
+  </div>
+
+  <div class="container" style="padding-top:48px;padding-bottom:64px;">
+    <div class="page-header" style="padding-top:0;margin-bottom:32px">
+      <span class="page-icon">🏗️</span>
+      <h1>AI Resume <span class="gradient-text">Builder</span></h1>
+      <p>Fill in your details. AI rewrites each section to make it more impactful — then export as DOCX or PDF.</p>
+    </div>
+
+    <!-- Progress -->
+    <div class="builder-progress">
+      <div class="builder-progress-fill" id="builderProgress" style="width:20%"></div>
+    </div>
+
+    <div class="builder-layout">
+      <!-- Step nav -->
+      <div class="step-nav card">
+        <div class="step-nav-item active" onclick="goStep(1)" id="nav1">
+          <div class="step-dot">1</div> Personal Info
+        </div>
+        <div class="step-nav-item" onclick="goStep(2)" id="nav2">
+          <div class="step-dot">2</div> Education
+        </div>
+        <div class="step-nav-item" onclick="goStep(3)" id="nav3">
+          <div class="step-dot">3</div> Skills
+        </div>
+        <div class="step-nav-item" onclick="goStep(4)" id="nav4">
+          <div class="step-dot">4</div> Experience
+        </div>
+        <div class="step-nav-item" onclick="goStep(5)" id="nav5">
+          <div class="step-dot">5</div> Projects
+        </div>
+        <div class="step-nav-item" onclick="goStep(6)" id="nav6">
+          <div class="step-dot">6</div> Export
+        </div>
+      </div>
+
+      <!-- Form Steps -->
+      <div>
+        <!-- Step 1: Personal Info -->
+        <div class="form-step active card" id="step1">
+          <h3 class="mb-24">👤 Personal Information</h3>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input id="pName" class="form-input" placeholder="e.g. Sunaina Sharma" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target Role *</label>
+              <input id="pRole" class="form-input" placeholder="e.g. Data Scientist" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input id="pEmail" class="form-input" type="email" placeholder="you@example.com" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input id="pPhone" class="form-input" placeholder="+91 99999 99999" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">LinkedIn URL</label>
+              <input id="pLinkedin" class="form-input" placeholder="linkedin.com/in/username" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">GitHub URL</label>
+              <input id="pGithub" class="form-input" placeholder="github.com/username" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Location</label>
+              <input id="pLocation" class="form-input" placeholder="City, State" />
+            </div>
+          </div>
+          <div class="form-group mt-8">
+            <div class="flex-between mb-8">
+              <label class="form-label" style="margin:0">Professional Summary</label>
+              <button class="ai-btn" onclick="generateSummary()" id="summaryAiBtn">✨ AI Generate</button>
+            </div>
+            <textarea id="pSummary" class="form-textarea" style="min-height:120px"
+              placeholder="A brief 2-4 sentence summary of your professional background…"></textarea>
+          </div>
+          <div class="step-actions">
+            <span></span>
+            <button class="btn btn-primary" onclick="goStep(2)">Next: Education →</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Education -->
+        <div class="form-step card" id="step2">
+          <h3 class="mb-24">🎓 Education</h3>
+          <div id="eduList"></div>
+          <button class="btn btn-secondary" onclick="addEdu()">+ Add Education</button>
+          <div class="step-actions">
+            <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
+            <button class="btn btn-primary"   onclick="goStep(3)">Next: Skills →</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Skills -->
+        <div class="form-step card" id="step3">
+          <h3 class="mb-24">🛠️ Skills</h3>
+          <div class="form-group">
+            <div class="flex-between mb-8">
+              <label class="form-label" style="margin:0">Your Skills</label>
+              <button class="ai-btn" onclick="suggestSkills()">✨ AI Suggest Skills</button>
+            </div>
+            <textarea id="skillsText" class="form-textarea" style="min-height:100px"
+              placeholder="Python, Machine Learning, SQL, TensorFlow, Git, Communication…"></textarea>
+            <p class="text-sm text-muted mt-8">Enter skills separated by commas.</p>
+          </div>
+          <div id="suggestedSkillsSection" class="hidden">
+            <div class="card" style="background:rgba(139,92,246,0.05);border-color:rgba(139,92,246,0.2);margin-top:16px">
+              <h4 class="mb-12">✨ AI-Suggested Skills</h4>
+              <div id="suggestedSkills" class="skill-chips mb-12"></div>
+              <button class="btn btn-ghost btn-sm" onclick="addSuggestedSkills()">+ Add All to My Skills</button>
+            </div>
+          </div>
+          <div class="form-group mt-16">
+            <label class="form-label">Certifications</label>
+            <textarea id="certsText" class="form-textarea" style="min-height:80px"
+              placeholder="AWS Certified Cloud Practitioner, Google Data Analytics Certificate…"></textarea>
+          </div>
+          <div class="step-actions">
+            <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
+            <button class="btn btn-primary"   onclick="goStep(4)">Next: Experience →</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Experience -->
+        <div class="form-step card" id="step4">
+          <h3 class="mb-24">💼 Work Experience / Internships</h3>
+          <div id="expList"></div>
+          <button class="btn btn-secondary" onclick="addExp()">+ Add Experience</button>
+          <div class="step-actions">
+            <button class="btn btn-secondary" onclick="goStep(3)">← Back</button>
+            <button class="btn btn-primary"   onclick="goStep(5)">Next: Projects →</button>
+          </div>
+        </div>
+
+        <!-- Step 5: Projects -->
+        <div class="form-step card" id="step5">
+          <h3 class="mb-24">🚀 Projects</h3>
+          <div id="projList"></div>
+          <button class="btn btn-secondary" onclick="addProj()">+ Add Project</button>
+          <div class="step-actions">
+            <button class="btn btn-secondary" onclick="goStep(4)">← Back</button>
+            <button class="btn btn-primary"   onclick="goStep(6)">Next: Export →</button>
+          </div>
+        </div>
+
+        <!-- Step 6: Export -->
+        <div class="form-step card" id="step6">
+          <h3 class="mb-8">📥 Export Your Resume</h3>
+          <p class="text-secondary mb-24">Your AI-polished resume is ready. Choose your format and download.</p>
+          <div class="grid-2">
+            <div class="card" style="text-align:center;cursor:pointer;border-color:var(--border-accent)" onclick="doExport('docx')">
+              <div style="font-size:3rem;margin-bottom:12px">📝</div>
+              <h3>Word Document</h3>
+              <p class="text-sm mt-8">Editable .docx file — perfect for further customization</p>
+              <button class="btn btn-primary mt-16 w-full">Download DOCX</button>
+            </div>
+            <div class="card" style="text-align:center;cursor:pointer" onclick="doExport('pdf')">
+              <div style="font-size:3rem;margin-bottom:12px">📄</div>
+              <h3>PDF Document</h3>
+              <p class="text-sm mt-8">Ready-to-submit PDF — clean, ATS-friendly layout</p>
+              <button class="btn btn-secondary mt-16 w-full">Download PDF</button>
+            </div>
+          </div>
+          <div class="alert alert-warning mt-24">
+            ⚠️ Please review AI-generated content before submitting. AI rewrites use only facts you provided.
+          </div>
+          <div class="card mt-16" style="background:rgba(0,194,203,0.05);border-color:var(--border-accent)">
+            <h4 class="mb-8">Next Steps</h4>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+              <a href="match.html" class="btn btn-primary">🎯 Check Job Match</a>
+              <a href="interview.html" class="btn btn-secondary">🎤 Interview Prep</a>
+            </div>
+          </div>
+          <div class="step-actions">
+            <button class="btn btn-secondary" onclick="goStep(5)">← Back</button>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    let currentStep = 1;
+    const totalSteps = 6;
+    let suggestedSkillsData = null;
+
+    function goStep(n) {
+      document.getElementById(`step${currentStep}`).classList.remove('active');
+      document.getElementById(`nav${currentStep}`).classList.remove('active');
+      document.getElementById(`nav${currentStep}`).classList.add('done');
+      currentStep = n;
+      document.getElementById(`step${n}`).classList.add('active');
+      document.querySelectorAll('.step-nav-item').forEach(el => el.classList.remove('active'));
+      document.getElementById(`nav${n}`).classList.add('active');
+      document.getElementById('builderProgress').style.width = `${(n / totalSteps) * 100}%`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ── Education ─────────────────── */
+    let eduCount = 0;
+    function addEdu() {
+      eduCount++;
+      const id = `edu${eduCount}`;
+      document.getElementById('eduList').insertAdjacentHTML('beforeend', `
+        <div class="dynamic-section" id="${id}">
+          <button class="btn btn-danger btn-sm remove-btn" onclick="document.getElementById('${id}').remove()">✕</button>
+          <div class="grid-2">
+            <div class="form-group"><label class="form-label">Degree / Course</label>
+              <input class="form-input edu-degree" placeholder="B.Tech CSE (AI & ML)"/></div>
+            <div class="form-group"><label class="form-label">Institution</label>
+              <input class="form-input edu-inst" placeholder="University Name"/></div>
+            <div class="form-group"><label class="form-label">Year</label>
+              <input class="form-input edu-year" placeholder="2022 – 2026"/></div>
+            <div class="form-group"><label class="form-label">Grade / CGPA</label>
+              <input class="form-input edu-grade" placeholder="8.5 CGPA"/></div>
+          </div>
+        </div>`);
+    }
+
+    /* ── Experience ─────────────────── */
+    let expCount = 0;
+    function addExp() {
+      expCount++;
+      const id = `exp${expCount}`;
+      document.getElementById('expList').insertAdjacentHTML('beforeend', `
+        <div class="dynamic-section" id="${id}">
+          <button class="btn btn-danger btn-sm remove-btn" onclick="document.getElementById('${id}').remove()">✕</button>
+          <div class="grid-2">
+            <div class="form-group"><label class="form-label">Job Title</label>
+              <input class="form-input exp-title" placeholder="ML Intern"/></div>
+            <div class="form-group"><label class="form-label">Company</label>
+              <input class="form-input exp-company" placeholder="Tech Corp Pvt. Ltd."/></div>
+            <div class="form-group"><label class="form-label">Duration</label>
+              <input class="form-input exp-duration" placeholder="Jun 2024 – Aug 2024"/></div>
+          </div>
+          <div class="form-group">
+            <div class="flex-between mb-8">
+              <label class="form-label" style="margin:0">Bullet Points</label>
+              <button class="ai-btn" onclick="aiImproveBullets('${id}')">✨ AI Improve All</button>
+            </div>
+            <div class="bullets-list" id="bullets_${id}">
+              <div class="bullet-item">
+                <input class="form-input" placeholder="Describe what you did and the impact…" />
+                <button class="ai-btn" onclick="aiOneBullet(this)">✨</button>
+              </div>
+            </div>
+            <button class="btn btn-secondary btn-sm mt-8" onclick="addBullet('bullets_${id}')">+ Bullet</button>
+          </div>
+        </div>`);
+    }
+
+    /* ── Projects ─────────────────── */
+    let projCount = 0;
+    function addProj() {
+      projCount++;
+      const id = `proj${projCount}`;
+      document.getElementById('projList').insertAdjacentHTML('beforeend', `
+        <div class="dynamic-section" id="${id}">
+          <button class="btn btn-danger btn-sm remove-btn" onclick="document.getElementById('${id}').remove()">✕</button>
+          <div class="grid-2">
+            <div class="form-group"><label class="form-label">Project Name</label>
+              <input class="form-input proj-name" placeholder="CareerCraft AI"/></div>
+            <div class="form-group"><label class="form-label">Tech Stack</label>
+              <input class="form-input proj-tech" placeholder="FastAPI, Groq, Python"/></div>
+          </div>
+          <div class="form-group">
+            <div class="flex-between mb-8">
+              <label class="form-label" style="margin:0">Description Bullets</label>
+              <button class="ai-btn" onclick="aiImproveBullets('${id}')">✨ AI Improve</button>
+            </div>
+            <div class="bullets-list" id="bullets_${id}">
+              <div class="bullet-item">
+                <input class="form-input" placeholder="Built an AI-powered resume analyzer using Groq LLM…" />
+                <button class="ai-btn" onclick="aiOneBullet(this)">✨</button>
+              </div>
+            </div>
+            <button class="btn btn-secondary btn-sm mt-8" onclick="addBullet('bullets_${id}')">+ Bullet</button>
+          </div>
+        </div>`);
+    }
+
+    function addBullet(listId) {
+      document.getElementById(listId).insertAdjacentHTML('beforeend', `
+        <div class="bullet-item">
+          <input class="form-input" placeholder="Add a bullet point…" />
+          <button class="ai-btn" onclick="aiOneBullet(this)">✨</button>
+        </div>`);
+    }
+
+    /* ── AI: Single bullet ─────────── */
+    async function aiOneBullet(btn) {
+      const input = btn.previousElementSibling;
+      const text  = input.value.trim();
+      if (!text) { showToast('Write something first, then AI will improve it.', 'warning'); return; }
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        const role = document.getElementById('pRole').value || '';
+        const { rewritten } = await Api.rewriteBullet(text, role);
+        input.value = rewritten;
+        showToast('Bullet improved!', 'success');
+      } catch(e) { showToast(e.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = '✨'; }
+    }
+
+    /* ── AI: Improve all bullets in a section ─── */
+    async function aiImproveBullets(sectionId) {
+      const role    = document.getElementById('pRole').value || '';
+      const bullets = document.querySelectorAll(`#bullets_${sectionId} .bullet-item input`);
+      let improved = 0;
+      for (const inp of bullets) {
+        if (!inp.value.trim()) continue;
+        try {
+          const { rewritten } = await Api.rewriteBullet(inp.value, role);
+          inp.value = rewritten; improved++;
+        } catch(e) { /* skip */ }
+      }
+      showToast(`Improved ${improved} bullet${improved!==1?'s':''}!`, 'success');
+    }
+
+    /* ── AI: Generate Summary ─────── */
+    async function generateSummary() {
+      const name  = document.getElementById('pName').value;
+      const role  = document.getElementById('pRole').value;
+      const skills = document.getElementById('skillsText').value;
+      if (!name || !role) { showToast('Fill in your Name and Target Role first.', 'warning'); return; }
+      const btn = document.getElementById('summaryAiBtn');
+      btn.disabled = true; btn.textContent = '…';
+      showLoader('✨ Writing your professional summary…');
+      try {
+        const eduItems = collectEdu();
+        const education = eduItems.map(e => `${e.degree} from ${e.institution}`).join(', ');
+        const { summary } = await Api.generateSummary({ name, target_role: role, skills, education });
+        document.getElementById('pSummary').value = summary;
+        showToast('Summary generated!', 'success');
+      } catch(e) { showToast(e.message, 'error'); }
+      finally { hideLoader(); btn.disabled = false; btn.textContent = '✨ AI Generate'; }
+    }
+
+    /* ── AI: Suggest Skills ─────────── */
+    async function suggestSkills() {
+      const role   = document.getElementById('pRole').value;
+      if (!role) { showToast('Enter your Target Role first.', 'warning'); return; }
+      showLoader('✨ Finding skills for your role…');
+      try {
+        const current = document.getElementById('skillsText').value;
+        const data    = await Api.suggestSkills(role, current);
+        suggestedSkillsData = data;
+        const all = [
+          ...(data.technical_skills||[]),
+          ...(data.tools_and_platforms||[]),
+          ...(data.soft_skills||[]),
+        ];
+        document.getElementById('suggestedSkills').innerHTML =
+          all.map(s => `<span class="chip chip-skill">${s}</span>`).join('');
+        document.getElementById('suggestedSkillsSection').classList.remove('hidden');
+        showToast('Skills suggested!', 'success');
+      } catch(e) { showToast(e.message, 'error'); }
+      finally { hideLoader(); }
+    }
+
+    function addSuggestedSkills() {
+      if (!suggestedSkillsData) return;
+      const all = [
+        ...(suggestedSkillsData.technical_skills||[]),
+        ...(suggestedSkillsData.tools_and_platforms||[]),
+      ].join(', ');
+      const curr = document.getElementById('skillsText').value;
+      document.getElementById('skillsText').value = curr ? `${curr}, ${all}` : all;
+      showToast('Skills added!', 'success');
+    }
+
+    /* ── Collect form data ──────────── */
+    function collectEdu() {
+      return Array.from(document.querySelectorAll('#eduList .dynamic-section')).map(s => ({
+        degree: s.querySelector('.edu-degree')?.value || '',
+        institution: s.querySelector('.edu-inst')?.value || '',
+        year: s.querySelector('.edu-year')?.value || '',
+        grade: s.querySelector('.edu-grade')?.value || '',
+      }));
+    }
+    function collectExp() {
+      return Array.from(document.querySelectorAll('#expList .dynamic-section')).map(s => ({
+        title: s.querySelector('.exp-title')?.value || '',
+        company: s.querySelector('.exp-company')?.value || '',
+        duration: s.querySelector('.exp-duration')?.value || '',
+        bullets: Array.from(s.querySelectorAll('.bullets-list input')).map(i=>i.value).filter(Boolean),
+      }));
+    }
+    function collectProj() {
+      return Array.from(document.querySelectorAll('#projList .dynamic-section')).map(s => ({
+        name: s.querySelector('.proj-name')?.value || '',
+        tech: s.querySelector('.proj-tech')?.value || '',
+        bullets: Array.from(s.querySelectorAll('.bullets-list input')).map(i=>i.value).filter(Boolean),
+      }));
+    }
+    function buildPayload(fmt) {
+      const skills = document.getElementById('skillsText').value
+        .split(',').map(s=>s.trim()).filter(Boolean);
+      const certs  = document.getElementById('certsText').value
+        .split('\n').map(s=>s.trim()).filter(Boolean);
+      return {
+        format: fmt,
+        name: document.getElementById('pName').value,
+        email: document.getElementById('pEmail').value,
+        phone: document.getElementById('pPhone').value,
+        linkedin: document.getElementById('pLinkedin').value,
+        github: document.getElementById('pGithub').value,
+        location: document.getElementById('pLocation').value,
+        summary: document.getElementById('pSummary').value,
+        skills,
+        education: collectEdu(),
+        experience: collectExp(),
+        projects: collectProj(),
+        certifications: certs,
+      };
+    }
+
+    async function doExport(fmt) {
+      const name = document.getElementById('pName').value;
+      if (!name) { showToast('Please fill in your name first.', 'warning'); return; }
+      showLoader(`📄 Generating your ${fmt.toUpperCase()} resume…`);
+      try {
+        await Api.exportResume(buildPayload(fmt), fmt);
+        showToast(`${fmt.toUpperCase()} downloaded!`, 'success');
+      } catch(e) { showToast(e.message, 'error'); }
+      finally { hideLoader(); }
+    }
+
+    // Init — add one entry by default
+    window.addEventListener('load', () => { addEdu(); addExp(); addProj(); });
+  </script>
+</body>
+</html>

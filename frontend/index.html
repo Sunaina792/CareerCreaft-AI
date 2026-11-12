@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareerCraft AI — Intelligent Resume Analyzer & Builder</title>
+  <meta name="description" content="AI-powered resume analyzer, skill gap assessor, and ATS-friendly resume builder powered by Groq LLM." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .hero { padding: 100px 0 72px; text-align: center; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,194,203,0.1); border: 1px solid rgba(0,194,203,0.25);
+      color: var(--accent-cyan); padding: 6px 16px; border-radius: 999px;
+      font-size: 0.82rem; font-weight: 600; margin-bottom: 24px;
+    }
+    .hero h1 { margin-bottom: 20px; line-height: 1.15; }
+    .hero p   { font-size: 1.15rem; max-width: 600px; margin: 0 auto 36px; }
+    .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 32px 0 80px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      transition: var(--transition);
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+    }
+    .feature-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-glow);
+    }
+    .feature-icon {
+      width: 52px; height: 52px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 { margin-bottom: 8px; }
+    .feature-card p  { font-size: 0.9rem; }
+    .feature-card .arrow {
+      margin-top: 16px; color: var(--accent-cyan);
+      font-size: 0.85rem; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+      transition: gap 0.2s;
+    }
+    .feature-card:hover .arrow { gap: 10px; }
+
+    .how-it-works { padding: 64px 0; }
+    .how-it-works h2 { text-align: center; margin-bottom: 48px; }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      position: relative;
+    }
+    .step { text-align: center; }
+    .step-num {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      color: #fff; font-weight: 800; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+    }
+    .step h4 { margin-bottom: 6px; }
+    .step p   { font-size: 0.85rem; }
+
+    .powered-by {
+      text-align: center; padding: 32px 0 64px;
+    }
+    .powered-by p {
+      font-size: 0.85rem; margin-bottom: 12px; color: var(--text-muted);
+    }
+    .tech-badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .tech-badge {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 16px;
+      font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <div class="logo-icon">🚀</div>
+        CareerCraft <span class="gradient-text" style="margin-left:4px">AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="analyze.html">Analyze</a></li>
+        <li><a href="match.html">Job Match</a></li>
+        <li><a href="builder.html">Build Resume</a></li>
+        <li><a href="interview.html">Interview Prep</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">⚡ Powered by Groq LLM · llama-3.3-70b-versatile</div>
+      <h1>Your <span class="gradient-text">AI Career</span><br>Coach — 24/7</h1>
+      <p>Upload your resume, get AI-powered analysis, identify skill gaps, and build an ATS-friendly resume that stands out.</p>
+      <div class="hero-btns">
+        <a href="analyze.html" class="btn btn-primary btn-lg">
+          📄 Analyze My Resume
+        </a>
+        <a href="builder.html" class="btn btn-secondary btn-lg">
+          ✨ Build from Scratch
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section>
+    <div class="container">
+      <div class="features-grid stagger">
+        <a href="analyze.html" class="feature-card animate-fade-up">
+          <div class="feature-icon" style="background:rgba(0,194,203,0.15);">📊</div>
+          <h3>AI Resume Analysis</h3>
+          <p>Upload your PDF or DOCX resume. Groq AI instantly scores it, detects missing sections, and gives specific improvement tips.</p>
+          <div class="arrow">Analyze Now →</div>
+        </a>
+        <a href="match.html" class="feature-card animate-fade-up">
+          <div class="feature-icon" style="background:rgba(59,130,246,0.15);">🎯</div>
+          <h3>Job Description Matching</h3>
+          <p>Paste any job description. AI semantically compares your resume and tells you exactly what's missing and how to close gaps.</p>
+          <div class="arrow">Match Now →</div>
+        </a>
+        <a href="builder.html" class="feature-card animate-fade-up">
+          <div class="feature-icon" style="background:rgba(139,92,246,0.15);">🏗️</div>
+          <h3>AI Resume Builder</h3>
+          <p>Fill a guided form. AI rewrites your bullets, generates your summary, and exports a polished DOCX or PDF resume.</p>
+          <div class="arrow">Build Resume →</div>
+        </a>
+        <a href="match.html" class="feature-card animate-fade-up">
+          <div class="feature-icon" style="background:rgba(16,185,129,0.15);">📈</div>
+          <h3>Skill Gap Assessment</h3>
+          <p>See exactly which skills you're missing for your target role, why they matter, and how long they take to learn.</p>
+          <div class="arrow">See Gaps →</div>
+        </a>
+        <a href="interview.html" class="feature-card animate-fade-up">
+          <div class="feature-icon" style="background:rgba(245,158,11,0.15);">🎤</div>
+          <h3>Interview Prep</h3>
+          <p>Get 10 personalized interview questions — technical, behavioral, and situational — tailored to your resume and role.</p>
+          <div class="arrow">Prep Now →</div>
+        </a>
+        <a href="builder.html" class="feature-card animate-fade-up">
+          <div class="feature-icon" style="background:rgba(239,68,68,0.15);">📥</div>
+          <h3>Export DOCX & PDF</h3>
+          <p>Download your AI-improved resume in Word or PDF format. ATS-friendly, clean single-column layout. Free forever.</p>
+          <div class="arrow">Export Resume →</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-it-works">
+    <div class="container">
+      <h2>How It <span class="gradient-text">Works</span></h2>
+      <div class="steps stagger">
+        <div class="step animate-fade-up">
+          <div class="step-num">1</div>
+          <h4>Upload Resume</h4>
+          <p>Upload your PDF or DOCX resume to get started</p>
+        </div>
+        <div class="step animate-fade-up">
+          <div class="step-num">2</div>
+          <h4>AI Analysis</h4>
+          <p>Groq LLM analyzes your resume and scores every section</p>
+        </div>
+        <div class="step animate-fade-up">
+          <div class="step-num">3</div>
+          <h4>Paste Job Description</h4>
+          <p>AI identifies exactly which skills you're missing for the role</p>
+        </div>
+        <div class="step animate-fade-up">
+          <div class="step-num">4</div>
+          <h4>AI Improves It</h4>
+          <p>Rewrite bullets, generate summary, add missing skills</p>
+        </div>
+        <div class="step animate-fade-up">
+          <div class="step-num">5</div>
+          <h4>Download & Apply</h4>
+          <p>Export your polished resume as DOCX or PDF</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Powered By -->
+  <div class="powered-by">
+    <div class="container">
+      <p>POWERED BY</p>
+      <div class="tech-badges">
+        <div class="tech-badge">⚡ Groq API</div>
+        <div class="tech-badge">🦙 LLaMA 3.3 70B</div>
+        <div class="tech-badge">🚀 FastAPI</div>
+        <div class="tech-badge">📄 PyMuPDF</div>
+        <div class="tech-badge">🖋️ python-docx</div>
+      </div>
+      <p style="margin-top:24px;font-size:0.8rem;color:var(--text-muted)">
+        ⚠️ AI-generated content is advisory. Always review before submitting.
+      </p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+</body>
+</html>

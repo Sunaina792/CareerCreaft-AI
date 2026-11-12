@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interview Prep — CareerCraft AI</title>
+  <meta name="description" content="Get 10 personalized AI-generated interview questions based on your resume and target job." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .q-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+      margin-bottom: 16px; transition: var(--transition);
+    }
+    .q-card:hover { border-color: var(--border-accent); }
+    .q-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 18px 20px; cursor: pointer;
+    }
+    .q-num {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(0,194,203,0.15); color: var(--accent-cyan);
+      font-weight: 700; font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .q-text { flex: 1; font-size: 0.97rem; font-weight: 500; }
+    .q-chevron { color: var(--text-muted); transition: transform 0.25s; font-style: normal; }
+    .q-card.open .q-chevron { transform: rotate(180deg); }
+    .q-body {
+      max-height: 0; overflow: hidden; transition: max-height 0.35s ease;
+      border-top: 0px solid var(--border);
+    }
+    .q-card.open .q-body { max-height: 400px; border-top-width: 1px; }
+    .q-body-inner { padding: 18px 20px 20px; }
+    .q-type-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+    .why-asked { padding: 10px 14px; background: rgba(59,130,246,0.08); border-radius: var(--radius-sm); margin-bottom: 10px; font-size: 0.88rem; }
+    .answer-tip { padding: 12px 14px; background: rgba(16,185,129,0.08); border-radius: var(--radius-sm); font-size: 0.88rem; }
+    .answer-tip strong { color: var(--accent-green); display: block; margin-bottom: 4px; }
+
+    .prep-advice-card {
+      background: linear-gradient(135deg, rgba(0,194,203,0.1), rgba(59,130,246,0.08));
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-lg); padding: 28px; margin-bottom: 32px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <div class="logo-icon">🚀</div>
+        CareerCraft <span class="gradient-text" style="margin-left:4px">AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="analyze.html">Analyze</a></li>
+        <li><a href="match.html">Job Match</a></li>
+        <li><a href="builder.html">Build Resume</a></li>
+        <li><a href="interview.html" class="active">Interview Prep</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p class="loading-text">Generating your personalized questions…</p>
+  </div>
+
+  <div class="container" style="padding-top:48px;padding-bottom:64px;">
+    <div class="page-header" style="padding-top:0">
+      <span class="page-icon">🎤</span>
+      <h1>Interview <span class="gradient-text">Prep</span></h1>
+      <p>AI generates 10 personalized questions — technical, behavioral, and situational — based on your resume and role.</p>
+    </div>
+
+    <!-- Input -->
+    <div id="inputSection" class="card-glass" style="max-width:780px;margin:0 auto 40px;">
+      <div class="alert alert-info mb-16" id="resumeLoadedAlert" style="display:none">
+        ✅ Resume loaded automatically. You can edit it below.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Resume Text</label>
+        <textarea id="resumeText" class="form-textarea" style="min-height:160px"
+          placeholder="Paste your resume text here, or visit the Analyze page first to auto-load…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Job Description <span class="text-muted">(optional but recommended)</span></label>
+        <textarea id="jobDesc" class="form-textarea" style="min-height:120px"
+          placeholder="Paste the job description for more tailored questions…"></textarea>
+      </div>
+      <div class="flex-center">
+        <button class="btn btn-primary btn-lg" onclick="generateQuestions()">
+          🎤 Generate Questions
+        </button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" class="hidden animate-fade-in" style="max-width:860px;margin:0 auto">
+      <!-- Prep Advice Banner -->
+      <div class="prep-advice-card" id="prepAdviceCard">
+        <h3 class="mb-8">💡 Overall Interview Strategy</h3>
+        <p id="prepAdvice" class="text-secondary" style="font-size:0.95rem;line-height:1.7"></p>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="flex-between mb-20">
+        <h2>Your Questions</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-secondary active-filter" onclick="filterQ('All', this)">All</button>
+          <button class="btn btn-sm btn-secondary" onclick="filterQ('Technical', this)">Technical</button>
+          <button class="btn btn-sm btn-secondary" onclick="filterQ('Behavioral', this)">Behavioral</button>
+          <button class="btn btn-sm btn-secondary" onclick="filterQ('Situational', this)">Situational</button>
+        </div>
+      </div>
+
+      <div id="questionsList"></div>
+
+      <div class="card mt-24" style="background:rgba(0,194,203,0.05);border-color:var(--border-accent);text-align:center">
+        <h3 class="mb-8">Ready to Apply?</h3>
+        <p class="text-secondary mb-16">Build your improved resume and submit with confidence.</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <a href="builder.html" class="btn btn-primary">🏗️ Build Improved Resume</a>
+          <a href="match.html"   class="btn btn-secondary">🎯 Check Job Match</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    let allQuestions = [];
+
+    window.addEventListener('load', () => {
+      const rt = Session.get('resumeText');
+      if (rt) {
+        document.getElementById('resumeText').value = rt;
+        document.getElementById('resumeLoadedAlert').style.display = 'flex';
+      }
+      const jd = Session.get('jobDescription');
+      if (jd) document.getElementById('jobDesc').value = jd;
+    });
+
+    async function generateQuestions() {
+      const rt = document.getElementById('resumeText').value.trim();
+      const jd = document.getElementById('jobDesc').value.trim();
+      if (!rt) { showToast('Please provide your resume text.', 'warning'); return; }
+      showLoader('🤖 AI is crafting your personalized questions…');
+      try {
+        const data = await Api.interviewPrep(rt, jd);
+        allQuestions = data.questions || [];
+        document.getElementById('prepAdvice').textContent = data.prep_advice || '';
+        renderQuestions(allQuestions);
+        document.getElementById('resultsSection').classList.remove('hidden');
+        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        showToast('10 questions generated!', 'success');
+      } catch(err) {
+        showToast(err.message, 'error');
+      } finally { hideLoader(); }
+    }
+
+    function renderQuestions(questions) {
+      const el = document.getElementById('questionsList');
+      el.innerHTML = questions.map((q, i) => {
+        const typeColor = {
+          'Technical':'badge-blue','Behavioral':'badge-purple',
+          'Situational':'badge-orange','Role-Specific':'badge-cyan'
+        }[q.type] || 'badge-blue';
+        const diffColor = {'Easy':'badge-green','Medium':'badge-orange','Hard':'badge-red'}[q.difficulty] || 'badge-blue';
+        return `
+          <div class="q-card" id="qcard${i}" data-type="${q.type}">
+            <div class="q-header" onclick="toggleQ(${i})">
+              <div class="q-num">${q.id || i+1}</div>
+              <div class="q-text">${q.question}</div>
+              <em class="q-chevron">▼</em>
+            </div>
+            <div class="q-body" id="qbody${i}">
+              <div class="q-body-inner">
+                <div class="q-type-row">
+                  <span class="badge ${typeColor}">${q.type}</span>
+                  <span class="badge ${diffColor}">${q.difficulty}</span>
+                  ${q.framework === 'STAR' ? '<span class="badge badge-purple">Use STAR Method</span>' : ''}
+                </div>
+                <div class="why-asked">
+                  <strong style="color:var(--accent-blue);display:block;margin-bottom:4px;font-size:0.8rem">🎯 WHAT THEY'RE TESTING</strong>
+                  ${q.why_asked}
+                </div>
+                <div class="answer-tip">
+                  <strong>💡 HOW TO ANSWER</strong>
+                  ${q.answer_tip}
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function toggleQ(i) {
+      const card = document.getElementById(`qcard${i}`);
+      const body = document.getElementById(`qbody${i}`);
+      const isOpen = card.classList.contains('open');
+      // Close all
+      document.querySelectorAll('.q-card').forEach(c => c.classList.remove('open'));
+      document.querySelectorAll('.q-body').forEach(b => { b.style.maxHeight = '0'; });
+      if (!isOpen) {
+        card.classList.add('open');
+        body.style.maxHeight = body.scrollHeight + 'px';
+      }
+    }
+
+    function filterQ(type, btn) {
+      document.querySelectorAll('.active-filter').forEach(b => b.classList.remove('active-filter'));
+      btn.classList.add('active-filter');
+      const filtered = type === 'All' ? allQuestions : allQuestions.filter(q => q.type === type);
+      renderQuestions(filtered);
+    }
+  </script>
+</body>
+</html>
