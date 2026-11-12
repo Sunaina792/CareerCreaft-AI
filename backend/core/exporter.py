@@ -6,6 +6,7 @@ Generates DOCX and PDF from structured candidate data.
 import io
 import logging
 from datetime import datetime
+from xml.sax.saxutils import escape
 
 logger = logging.getLogger(__name__)
 
@@ -210,26 +211,29 @@ def generate_pdf(data: dict) -> bytes:
 
     story = []
 
+    def safe_text(value):
+        return escape(str(value or ""))
+
     def section_header(title):
         story.append(Paragraph(title.upper(), style_section))
         story.append(HRFlowable(width="100%", thickness=1, color=CYAN, spaceAfter=4))
 
     # Name & Contact
     name = data.get("name", "Your Name")
-    story.append(Paragraph(name, style_name))
+    story.append(Paragraph(safe_text(name), style_name))
 
     contact_parts = []
     for field in ["email", "phone", "linkedin", "github", "location"]:
         val = data.get(field, "")
         if val:
-            contact_parts.append(val)
+            contact_parts.append(safe_text(val))
     if contact_parts:
         story.append(Paragraph("  |  ".join(contact_parts), style_contact))
 
     # Summary
     if data.get("summary"):
         section_header("Professional Summary")
-        story.append(Paragraph(data["summary"], style_body))
+        story.append(Paragraph(safe_text(data["summary"]), style_body))
         story.append(Spacer(1, 4))
 
     # Skills
@@ -237,7 +241,7 @@ def generate_pdf(data: dict) -> bytes:
         section_header("Skills")
         skills = data["skills"]
         skills_text = " • ".join(skills) if isinstance(skills, list) else str(skills)
-        story.append(Paragraph(skills_text, style_body))
+        story.append(Paragraph(safe_text(skills_text), style_body))
         story.append(Spacer(1, 4))
 
     # Education
@@ -245,11 +249,11 @@ def generate_pdf(data: dict) -> bytes:
         section_header("Education")
         for edu in data["education"]:
             story.append(Paragraph(
-                f"<b>{edu.get('degree', '')}</b> — {edu.get('institution', '')}",
+                f"<b>{safe_text(edu.get('degree', ''))}</b> — {safe_text(edu.get('institution', ''))}",
                 style_body
             ))
             story.append(Paragraph(
-                f"{edu.get('year', '')}  {edu.get('grade', '')}",
+                f"{safe_text(edu.get('year', ''))}  {safe_text(edu.get('grade', ''))}",
                 style_sub
             ))
         story.append(Spacer(1, 4))
@@ -259,30 +263,30 @@ def generate_pdf(data: dict) -> bytes:
         section_header("Experience")
         for exp in data["experience"]:
             story.append(Paragraph(
-                f"<b>{exp.get('title', '')}</b> @ {exp.get('company', '')}",
+                f"<b>{safe_text(exp.get('title', ''))}</b> @ {safe_text(exp.get('company', ''))}",
                 style_body
             ))
-            story.append(Paragraph(exp.get("duration", ""), style_sub))
+            story.append(Paragraph(safe_text(exp.get("duration", "")), style_sub))
             for bullet in exp.get("bullets", []):
-                story.append(Paragraph(f"• {bullet}", style_bullet))
+                story.append(Paragraph(f"• {safe_text(bullet)}", style_bullet))
         story.append(Spacer(1, 4))
 
     # Projects
     if data.get("projects"):
         section_header("Projects")
         for proj in data["projects"]:
-            story.append(Paragraph(f"<b>{proj.get('name', '')}</b>", style_body))
+            story.append(Paragraph(f"<b>{safe_text(proj.get('name', ''))}</b>", style_body))
             if proj.get("tech"):
-                story.append(Paragraph(f"Tech Stack: {proj.get('tech', '')}", style_sub))
+                story.append(Paragraph(f"Tech Stack: {safe_text(proj.get('tech', ''))}", style_sub))
             for bullet in proj.get("bullets", []):
-                story.append(Paragraph(f"• {bullet}", style_bullet))
+                story.append(Paragraph(f"• {safe_text(bullet)}", style_bullet))
         story.append(Spacer(1, 4))
 
     # Certifications
     if data.get("certifications"):
         section_header("Certifications")
         for cert in data["certifications"]:
-            story.append(Paragraph(f"• {cert}", style_bullet))
+            story.append(Paragraph(f"• {safe_text(cert)}", style_bullet))
 
     doc.build(story)
     buf.seek(0)

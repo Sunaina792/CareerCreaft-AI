@@ -3,17 +3,98 @@ CareerCraft AI — /api/builder
 AI-assisted resume content generation endpoints.
 """
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel, Field, ValidationError
+from core.parser import extract_text
 from core.groq_client import ask_groq, ask_groq_fast
 from core.prompts import (
     SUMMARY_SYSTEM, SUMMARY_USER,
     BULLET_SYSTEM, BULLET_USER,
     SKILLS_SYSTEM, SKILLS_USER,
     IMPROVE_SECTION_SYSTEM, IMPROVE_SECTION_USER,
+    TAILOR_RESUME_SYSTEM, TAILOR_RESUME_USER,
 )
 
 router = APIRouter()
+
+
+# ── Tailor Resume to a Job Description ────────
+class TailoredEducation(BaseModel):
+    degree: str = ""
+    institution: str = ""
+    year: str = ""
+    grade: str = ""
+
+
+class TailoredExperience(BaseModel):
+    title: str = ""
+    company: str = ""
+    duration: str = ""
+    bullets: list[str] = Field(default_factory=list)
+
+
+class TailoredProject(BaseModel):
+    name: str = ""
+    tech: str = ""
+    bullets: list[str] = Field(default_factory=list)
+
+
+class TailoredResume(BaseModel):
+    name: str = Field(min_length=1)
+    email: str = ""
+    phone: str = ""
+    linkedin: str = ""
+    github: str = ""
+    location: str = ""
+    target_role: str = ""
+    summary: str = ""
+    skills: list[str] = Field(default_factory=list)
+    education: list[TailoredEducation] = Field(default_factory=list)
+    experience: list[TailoredExperience] = Field(default_factory=list)
+    projects: list[TailoredProject] = Field(default_factory=list)
+    certifications: list[str] = Field(default_factory=list)
+
+
+@router.post("/builder/tailor")
+async def tailor_resume(
+    file: UploadFile = File(...),
+    job_description: str = Form(..., min_length=30, max_length=20000),
+):
+    """Create a job-targeted resume from an uploaded PDF or DOCX."""
+    resume_text = await extract_text(file)
+    if len(resume_text.strip()) < 50:
+        raise HTTPException(
+            status_code=422,
+            detail="Resume text is too short to build a tailored resume.",
+        )
+    if len(resume_text) > 30000:
+        raise HTTPException(
+            status_code=413,
+            detail="Resume text is too long to process. Please upload a shorter resume.",
+        )
+
+    try:
+        result = ask_groq(
+            system_prompt=TAILOR_RESUME_SYSTEM,
+            user_prompt=TAILOR_RESUME_USER.format(
+                resume_text=resume_text,
+                job_description=job_description.strip(),
+            ),
+            json_mode=True,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    try:
+        resume = TailoredResume.parse_obj(result)
+    except (ValidationError, TypeError) as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"AI returned an invalid resume structure: {e}",
+        )
+    return resume.dict()
 
 
 # ── Generate Professional Summary ────────────

@@ -62,6 +62,8 @@
       transition: width 0.5s ease;
     }
     .step-actions { display: flex; justify-content: space-between; margin-top: 32px; }
+    .tailor-panel { max-width: 900px; margin: 0 auto 32px; }
+    .tailor-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   </style>
 </head>
 <body>
@@ -90,7 +92,40 @@
     <div class="page-header" style="padding-top:0;margin-bottom:32px">
       <span class="page-icon">🏗️</span>
       <h1>AI Resume <span class="gradient-text">Builder</span></h1>
-      <p>Fill in your details. AI rewrites each section to make it more impactful — then export as DOCX or PDF.</p>
+      <p>Upload your resume and a job description to create a tailored, downloadable resume.</p>
+    </div>
+
+    <section class="card tailor-panel">
+      <h3 class="mb-8">✨ Create a tailored resume</h3>
+      <p class="text-secondary mb-16">Your existing resume is the source of truth. AI will tailor its wording to the job without adding unsupported experience or skills.</p>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" for="tailorResumeFile">Upload your resume (PDF or DOCX)</label>
+          <input id="tailorResumeFile" class="form-input" type="file" accept=".pdf,.docx" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="jobDescription">Job description</label>
+          <textarea id="jobDescription" class="form-textarea" style="min-height:120px"
+            placeholder="Paste the job description you are applying for…"></textarea>
+        </div>
+      </div>
+      <div class="tailor-actions">
+        <button id="tailorButton" class="btn btn-primary" onclick="createTailoredResume()">✨ Generate tailored resume</button>
+        <span class="text-sm text-muted">Your uploaded file is processed in memory and not stored.</span>
+      </div>
+      <div id="tailorResult" class="hidden mt-16">
+        <div class="alert alert-success mb-16">Your tailored resume is ready. Review the content before submitting.</div>
+        <div class="tailor-actions">
+          <button class="btn btn-primary" onclick="doExport('docx')">Download DOCX</button>
+          <button class="btn btn-secondary" onclick="doExport('pdf')">Download PDF</button>
+          <button class="btn btn-ghost" onclick="goStep(1)">Review or edit resume</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="text-center mb-24">
+      <h3>Or build your resume manually</h3>
+      <p class="text-sm text-secondary mt-8">You can review and edit AI-generated resume details in the editor below.</p>
     </div>
 
     <!-- Progress -->
@@ -270,7 +305,7 @@
     </div>
   </div>
 
-  <script src="js/api.js"></script>
+  <script src="js/api.js?v=2"></script>
   <script>
     let currentStep = 1;
     const totalSteps = 6;
@@ -377,6 +412,92 @@
           <input class="form-input" placeholder="Add a bullet point…" />
           <button class="ai-btn" onclick="aiOneBullet(this)">✨</button>
         </div>`);
+    }
+
+    function populateResume(data) {
+      const fields = {
+        pName: data.name,
+        pRole: data.target_role,
+        pEmail: data.email,
+        pPhone: data.phone,
+        pLinkedin: data.linkedin,
+        pGithub: data.github,
+        pLocation: data.location,
+        pSummary: data.summary,
+      };
+      Object.entries(fields).forEach(([id, value]) => {
+        document.getElementById(id).value = value || '';
+      });
+      document.getElementById('skillsText').value = (data.skills || []).join(', ');
+      document.getElementById('certsText').value = (data.certifications || []).join('\n');
+
+      const eduList = document.getElementById('eduList');
+      eduList.innerHTML = '';
+      (data.education || []).forEach(item => {
+        addEdu();
+        const section = eduList.lastElementChild;
+        section.querySelector('.edu-degree').value = item.degree || '';
+        section.querySelector('.edu-inst').value = item.institution || '';
+        section.querySelector('.edu-year').value = item.year || '';
+        section.querySelector('.edu-grade').value = item.grade || '';
+      });
+
+      const expList = document.getElementById('expList');
+      expList.innerHTML = '';
+      (data.experience || []).forEach(item => {
+        addExp();
+        const section = expList.lastElementChild;
+        section.querySelector('.exp-title').value = item.title || '';
+        section.querySelector('.exp-company').value = item.company || '';
+        section.querySelector('.exp-duration').value = item.duration || '';
+        const bulletList = section.querySelector('.bullets-list');
+        const bullets = item.bullets || [];
+        bulletList.innerHTML = '';
+        bullets.forEach(bullet => {
+          addBullet(bulletList.id);
+          bulletList.lastElementChild.querySelector('input').value = bullet;
+        });
+        if (!bullets.length) addBullet(bulletList.id);
+      });
+
+      const projList = document.getElementById('projList');
+      projList.innerHTML = '';
+      (data.projects || []).forEach(item => {
+        addProj();
+        const section = projList.lastElementChild;
+        section.querySelector('.proj-name').value = item.name || '';
+        section.querySelector('.proj-tech').value = item.tech || '';
+        const bulletList = section.querySelector('.bullets-list');
+        const bullets = item.bullets || [];
+        bulletList.innerHTML = '';
+        bullets.forEach(bullet => {
+          addBullet(bulletList.id);
+          bulletList.lastElementChild.querySelector('input').value = bullet;
+        });
+        if (!bullets.length) addBullet(bulletList.id);
+      });
+    }
+
+    async function createTailoredResume() {
+      const file = document.getElementById('tailorResumeFile').files[0];
+      const jobDescription = document.getElementById('jobDescription').value.trim();
+      if (!file) { showToast('Please upload your resume first.', 'warning'); return; }
+      if (!jobDescription) { showToast('Please paste the job description.', 'warning'); return; }
+
+      const button = document.getElementById('tailorButton');
+      button.disabled = true;
+      showLoader('✨ Creating a resume tailored to this job…');
+      try {
+        const resume = await Api.tailorResume(file, jobDescription);
+        populateResume(resume);
+        document.getElementById('tailorResult').classList.remove('hidden');
+        showToast('Tailored resume created. Review it before downloading.', 'success');
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        hideLoader();
+        button.disabled = false;
+      }
     }
 
     /* ── AI: Single bullet ─────────── */

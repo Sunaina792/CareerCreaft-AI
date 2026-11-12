@@ -67,6 +67,16 @@ const Api = {
     return res.json();
   },
 
+  /* ── Builder: Tailor from Resume + Job Description ── */
+  async tailorResume(file, jobDescription) {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('job_description', jobDescription);
+    const res = await fetch(`${API_BASE}/builder/tailor`, { method: 'POST', body: form });
+    if (!res.ok) throw await _parseError(res);
+    return res.json();
+  },
+
   /* ── Interview Prep ──────────────────── */
   async interviewPrep(resumeText, jobDescription = '') {
     const res = await fetch(`${API_BASE}/interview-prep`, {

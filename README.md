@@ -7,6 +7,7 @@ CareerCraft AI is an AI-powered resume analyzer and builder. It uses FastAPI for
 - Analyze a resume and receive a score, feedback, and improvement suggestions.
 - Compare resume content with a job description.
 - Generate or improve resume summaries, bullet points, and skills.
+- Tailor an uploaded resume to a job description and download the result as DOCX or PDF.
 - Create interview preparation questions from a resume and optional job description.
 - Export a resume as DOCX or PDF.
 
@@ -73,6 +74,7 @@ All application API endpoints are served under `/api`.
 | `POST` | `/api/builder/rewrite-bullet` | Rewrite a resume bullet point |
 | `POST` | `/api/builder/suggest-skills` | Suggest skills for a target role |
 | `POST` | `/api/builder/improve-section` | Improve resume section content |
+| `POST` | `/api/builder/tailor` | Tailor an uploaded PDF or DOCX resume to a job description |
 | `POST` | `/api/interview-prep` | Generate interview questions and tips |
 | `POST` | `/api/export` | Generate a DOCX or PDF resume |
 
