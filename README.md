@@ -6,7 +6,6 @@ CareerCraft AI is built with a **FastAPI** backend, a static **HTML/CSS/JavaScri
 
 ![CareerCraft AI home page](screenshots/01-home.png)
 
-> **Live demo:** _add your Render URL here_ &nbsp;|&nbsp; **API docs:** `/docs` on the running server
 
 ---
 
