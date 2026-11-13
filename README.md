@@ -4,7 +4,7 @@
 
 CareerCraft AI is built with a **FastAPI** backend, a static **HTML/CSS/JavaScript** frontend, and **Groq** (`llama-3.3-70b-versatile`) for resume analysis and writing assistance.
 
-![CareerCraft AI home page](docs/screenshots/01-home.png)
+![CareerCraft AI home page](screenshots/01-home.png)
 
 > **Live demo:** _add your Render URL here_ &nbsp;|&nbsp; **API docs:** `/docs` on the running server
 
@@ -71,37 +71,10 @@ The resume from your last analysis is carried over automatically to the Job Matc
 
 ### Home
 
-![Feature overview](docs/screenshots/02-features.png)
+![Feature overview](screenshots/02-features.png)
 
-![How it works](docs/screenshots/03-how-it-works.png)
+![How it works](screenshots/03-how-it-works.png)
 
-### Resume Analysis
-
-Score out of 100, score breakdown, detected skills, and strengths.
-
-![Resume analysis](docs/screenshots/04-analyze.png)
-
-### Job Match
-
-Resume and job description side by side with an overall match score.
-
-![Job match score](docs/screenshots/05-job-match.png)
-
-Matched, missing, and bonus skills, with a skill gap roadmap and resume tailoring tips.
-
-![Skills, roadmap and tailoring tips](docs/screenshots/06-skill-gap-roadmap.png)
-
-### Tailored Resume Builder
-
-Upload a resume and a job description, generate, review, and download as DOCX or PDF.
-
-![Tailored resume builder](docs/screenshots/07-build-resume.png)
-
-### Interview Prep
-
-Overall strategy plus personalized questions, filterable by Technical, Behavioral, and Situational.
-
-![Interview prep](docs/screenshots/08-interview-prep.png)
 
 ---
 
