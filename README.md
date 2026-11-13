@@ -171,22 +171,6 @@ python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 
 ---
 
-## Deploy on Render
-
-The FastAPI server hosts both the frontend and the API, so the whole app deploys as **one web service**.
-
-1. Push the project to GitHub and create a **Web Service** on [Render](https://render.com/) connected to the repository.
-2. Set the **Root Directory** to the directory containing `pyproject.toml` (leave it blank if that is the repository root).
-3. Use these commands:
-   - **Build Command:** `pip install .`
-   - **Start Command:** `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
-4. Add `GROQ_API_KEY` under the service's **Environment Variables**. Use your actual Groq API key and never commit it to GitHub.
-5. Deploy, then open the Render service URL and check `/api/health`.
-
-The frontend calls `/api` on the same host, so the pages and the API work together on the deployed domain.
-
----
-
 ## API Endpoints
 
 All application endpoints are served under `/api`.
@@ -217,8 +201,7 @@ CareerCraft_AI/
 │   ├── routers/     FastAPI endpoint modules
 │   └── main.py      Application entry point and frontend hosting
 ├── frontend/        HTML pages, stylesheets, and browser-side JavaScript
-├── docs/
-│   └── screenshots/ Images used in this README
+├── screenshots/ Images used in this README
 ├── .env.example     Template for environment variables
 └── pyproject.toml   Project metadata and dependencies
 ```
@@ -253,9 +236,9 @@ CareerCraft_AI/
 
 ## Author
 
-**Sunaina**, B.Tech CSE (AI & ML)
+**Sunaina**, 
 
 - GitHub: [@Sunaina792](https://github.com/Sunaina792)
 - LinkedIn: [sunaina-ai](https://linkedin.com/in/sunaina-ai)
 
-If you find this project useful, consider giving it a star.
+
